@@ -21,8 +21,8 @@ if __name__ == "__main__":
     image = mpimg.imread('test_images/challenge2.jpg')
 
     Lane.purge()
-    plt.imshow(image_pipeline(image))
-    plt.show()
+#    plt.imshow(image_pipeline(image))
+#    plt.show()
 
     VERBOSE = False
     for img in os.listdir("test_images/"):

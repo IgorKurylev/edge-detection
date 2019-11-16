@@ -131,14 +131,14 @@ class Lane(object):
         return self.coeffs[1]
 
     # The main client method for dealing with lane updates
-    def update_lane_line(self, segments):
+    def update_lane_line(self, segments, image):
         average_buffer = np.average(self.buffer, axis=0)
         self.coeffs = np.average(self.buffer, axis=0)
         self.update_current_lane_line_coeffs(segments)
         weights = Lane.DECISION_MAT[self.stable]
         current_buffer_coeffs = np.dot(weights, np.vstack([self.current_lane_line_coeffs, average_buffer]))
         self.buffer = np.insert(self.buffer, 0, current_buffer_coeffs, axis=0)[:-1]
-        self.update_lane_line_coords()
+        self.update_lane_line_coords(image)
 
     def update_current_lane_line_coeffs(self, segments):
         lane_line_coeffs, points = Lane.fit_lane_line(segments)
@@ -161,7 +161,7 @@ class Lane(object):
     def get_x_coord(self, y):
         return int((y - self.coeffs[1]) / self.coeffs[0])
 
-    def update_lane_line_coords(self):
+    def update_lane_line_coords(self, image):
         # Offset to distinguish lines
         visual_offset = 20
         self.y1 = image.shape[1]
