@@ -6,6 +6,7 @@ import numpy as np
 import math
 from lane import Line,Lane
 
+
 def grayscale(img):
     """Applies the Grayscale transform
     This will return an image with only one color channel
@@ -19,7 +20,13 @@ def grayscale(img):
 
 def canny(img, low_threshold, high_threshold):
     """Applies the Canny transform"""
-    return cv2.Canny(img, low_threshold, high_threshold)
+    try:
+        res = cv2.Canny(img, low_threshold, high_threshold)
+    except:
+        img = np.uint8(img)
+        res = cv2.Canny(img, low_threshold, high_threshold)
+    return res
+    #return cv2.Canny(img, low_threshold, high_threshold)
 
 
 def gaussian_blur(img, kernel_size):
@@ -294,9 +301,15 @@ def image_pipeline(image):
 
     masked_image = draw_binary_mask(binary_mask, hsv_image)
 
+    masked_image = gaussian_blur(masked_image, 7)
+
+
+
     blank_image = np.zeros_like(image)
 
     edges_mask = canny(masked_image, 280, 360)
+
+
 
     if not Lane.lines_exist():
         edges_mask = region_of_interest(edges_mask, ROI_VERTICES)
@@ -305,18 +318,23 @@ def image_pipeline(image):
 
     segments = hough_line_transform(edges_mask, 1, math.pi / 180, 5, 5, 8)
 
+
     ### Stage 2: Lane lines state update
 
-    update_lane(segments, image)
+    # was (segments, image)
+    update_lane(segments, edges_image)
 
     ### Stage 3: Drawing
 
     # Snapshot 1
     out_snap1 = np.zeros_like(image)
     out_snap1 = draw_binary_mask(binary_mask, out_snap1)
+    # plt.imshow(out_snap1)
+    # plt.show()
     out_snap1 = draw_filtered_lines(segments, out_snap1)
     snapshot1 = cv2.resize(deepcopy(out_snap1), (240, 135))
 
+    # plt.imshow(out_snap1)
     # plt.imshow(snapshot1)
     # plt.show()
 
@@ -324,10 +342,15 @@ def image_pipeline(image):
     # Snapshot 2
     out_snap2 = np.zeros_like(image)
     out_snap2 = draw_canny_edges(edges_mask, out_snap2)
+    # plt.imshow(out_snap2)
+    # plt.show()
     out_snap2 = draw_points(Lane.left_line.points, out_snap2, Lane.COLORS['left_line'])
     out_snap2 = draw_points(Lane.right_line.points, out_snap2, Lane.COLORS['right_line'])
     out_snap2 = draw_lane_polygon(out_snap2)
     snapshot2 = cv2.resize(deepcopy(out_snap2), (240, 135))
+
+    # plt.imshow(snapshot2)
+    # plt.show()
 
     # Augmented image
     output = deepcopy(image)
